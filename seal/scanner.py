@@ -5,16 +5,18 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 STRING_DELIMETER = '"'
-LABEL = ':'
+COMMENT_DELIMETER = '`'
+LABEL_SUFFIX = ':'
 LEFT_PAREN = '('
 RIGHT_PAREN = ')'
-VARIABLE = '$'
-COMMENT = '`'
+VAR_PREFIX = '$'
+CONST_PREFIX = '@'
 NEWLINE = '\n'
 IN = '#in'
 CASE = '#case'
 WHILE = '#while'
 FN = '#fn'
+
 
 TERMINALS = [LEFT_PAREN, RIGHT_PAREN, STRING_DELIMETER, NEWLINE]
 
@@ -32,6 +34,7 @@ TokenType = Enum('TokenType', [
     'WHILE',
     'FN',
     'ROOT',
+    'CONSTANT'
 ])
 
 
@@ -110,8 +113,8 @@ def scan(f: TextIO) -> Generator[Token, None, None]:
         elif c == RIGHT_PAREN:
             yield token(TokenType.END, RIGHT_PAREN)
             c = consume_one()
-        elif c == COMMENT:
-            c, value = consume(lambda c: c != COMMENT, consume_one())
+        elif c == COMMENT_DELIMETER:
+            c, value = consume(lambda c: c != COMMENT_DELIMETER, consume_one())
             yield token(TokenType.COMMENT, value)
             c = consume_one()
         elif c == STRING_DELIMETER:
@@ -123,16 +126,18 @@ def scan(f: TextIO) -> Generator[Token, None, None]:
             yield token(TokenType.INT, value)
         elif atom_test(c):
             c, value = consume(atom_test, c)
-            if value.endswith(LABEL):
+            if value.endswith(LABEL_SUFFIX):
                 yield token(TokenType.LABEL, value)
-            elif value.startswith(VARIABLE):
+            elif value.startswith(VAR_PREFIX):
                 yield token(TokenType.VARIABLE, value)
+            elif value.startswith(CONST_PREFIX):
+                yield token(TokenType.CONSTANT, value)
             elif value == IN:
                 yield token(TokenType.IN, value)
             elif value == CASE:
                 yield token(TokenType.CASE, value)
             elif value == WHILE:
-                yield token(TokenType.CASE, value)
+                yield token(TokenType.WHILE, value)
             elif value == FN:
                 yield token(TokenType.FN, value)
             else:

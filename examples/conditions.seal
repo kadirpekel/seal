@@ -1,0 +1,34 @@
+(#in
+  (#case (== txn.ApplicationID 0)
+    (return 1)
+  )
+  (#case (== txn.OnCompletion int.OptIn)
+    (return 1)
+  )
+  (#case (== txn.OnCompletion int.NoOp)
+    (#in
+        (#case (== txna.ApplicationArgs.0 "a")
+            b.action_a
+        )
+        (#case (== txna.ApplicationArgs.0 "b")
+            b.action_b
+        )
+        (#case 1 b.action_default)
+    )
+  )
+)
+err
+
+(action_a: 
+    `Put your action implementation here`
+    (return 1)
+)
+(action_b: 
+    `Put your action implementation here`
+    (return 1)
+)
+(action_default: 
+    `Put your action implementation here`
+    (return 1)
+)
+err

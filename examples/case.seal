@@ -1,0 +1,3 @@
+(#case (== txn.ApplicationID 0)
+    (return 1)
+)

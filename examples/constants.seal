@@ -1,0 +1,3 @@
+(@MAX_AMOUNT 5000000)
+
+(assert (>= txn.Amount @MAX_AMOUNT))

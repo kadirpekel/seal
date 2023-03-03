@@ -1,5 +1,5 @@
 from io import IOBase, StringIO
-from typing import TypeVar, Generic, List, Generator, Optional
+from typing import TypeVar, Generic, List, Generator, Optional, Dict
 from dataclasses import dataclass
 
 from seal import langspec
@@ -9,13 +9,14 @@ from seal.scanner import TokenType, Token, scan
 max_scratch_space = 256
 scratch_space: List[str] = []
 case_counter = 0
+constants: Dict[str, str or int] = {}
 
 
 def allocate_case_label() -> int:
     global case_counter
-    label = 'label_{}'.format(case_counter)
+    alias = 'label_{}'.format(case_counter)
     case_counter += 1
-    return label
+    return alias
 
 
 def allocate_scratch_space(name: str) -> int:
@@ -53,11 +54,52 @@ class Node(Generic[T]):
     config: Optional[Config] = None
     alias: Optional[str] = None
 
+    @property
+    def noncomments(self) -> List[T]:
+        if self.children:
+            return list(
+                filter(lambda c: c.token.token_type != TokenType.COMMENT,
+                       self.children)
+            )
+        return []
+
+    @property
+    def command(self) -> str:
+        return '{}'.format(self.alias) if self.alias else self.token.head
+
+    @property
+    def immediate_args(self) -> List[str]:
+        return self.immediate_args_override or self.token.rest
+
+    @property
+    def statement(self) -> str:
+        return ' '.join([self.command, *self.immediate_args])
+
     def __post_init__(self):
         self.validate()
 
     def validate(self):
         pass
+
+    def emit(self) -> List[str]:
+        lines = []
+        if self.children:
+            for child in self.children:
+                lines.extend(child.emit())
+        if self.token:
+            if self.doc:
+                lines.append('{} // {}'.format(self.statement, self.doc))
+            else:
+                lines.append('{}'.format(self.statement))
+        return lines
+
+    def write(self, f: IOBase):
+        f.writelines(['{}\n'.format(line) for line in self.emit() if line])
+
+    def __str__(self) -> str:
+        with StringIO() as io:
+            self.write(io)
+            return io.getvalue()
 
     @classmethod
     def from_str(cls, input, config: Optional[Config] = None, root: T = None,
@@ -120,26 +162,9 @@ class Node(Generic[T]):
             except KeyError:
                 raise CompilerError('Invalid opcode', token=token)
         elif token.token_type == TokenType.VARIABLE:
-            if children:
-                index = allocate_scratch_space(token.value)
-                if index < 0:
-                    raise CompilerError('Scratch space overflow', token=token)
-                return Opcode(token,
-                              spec=langspec.opcodes['store'],
-                              immediate_args_override=[str(index)],
-                              children=children,
-                              doc=token.value,
-                              config=config)
-            else:
-                index = refer_scratch_space(token.value)
-                if index < 0:
-                    raise CompilerError('Scratch space not found', token=token)
-                return Opcode(token,
-                              spec=langspec.opcodes['load'],
-                              children=children,
-                              immediate_args_override=[str(index)],
-                              doc=token.value,
-                              config=config)
+            return Variable(token, children=children, config=config)
+        elif token.token_type == TokenType.CONSTANT:
+            return Const(token, children=children, config=config)
         elif token.token_type == TokenType.BYTE:
             return Opcode(token,
                           spec=langspec.opcodes['byte'],
@@ -167,54 +192,11 @@ class Node(Generic[T]):
 
         raise CompilerError('Invalid token', token=token)
 
-    @property
-    def stack_height(self):
-        return sum([child.stack_height for child in self.children or []])
-
-    @property
-    def command(self) -> str:
-        return '{}:'.format(self.alias) if self.alias else self.token.head
-
-    @property
-    def immediate_args(self) -> List[str]:
-        return self.immediate_args_override or self.token.rest
-
-    @property
-    def statement(self) -> str:
-        return ' '.join([self.command, *self.immediate_args])
-
-    def emit(self) -> List[str]:
-        lines = []
-        if self.children:
-            for child in self.children:
-                lines.extend(child.emit())
-        if self.token:
-            if self.doc:
-                lines.append('{} // {}'.format(self.statement, self.doc))
-            else:
-                lines.append('{}'.format(self.statement))
-        return lines
-
-    def write(self, f: IOBase):
-        f.writelines(['{}\n'.format(line) for line in self.emit()])
-
-    def __str__(self) -> str:
-        with StringIO() as io:
-            self.write(io)
-            return io.getvalue()
-
 
 @dataclass
 class Opcode(Node):
 
     spec: langspec.Opcode = None
-
-    @property
-    def noncomments(self) -> List[T]:
-        if self.children:
-            return filter(lambda c: c.token.token_type != TokenType.COMMENT,
-                          self.children)
-        return []
 
     @property
     def statement(self) -> str:
@@ -231,10 +213,6 @@ class Opcode(Node):
     @property
     def arg_height(self) -> int:
         return len(self.spec.args or [])
-
-    @property
-    def stack_height(self) -> int:
-        return self.return_height - (self.arg_height - self.children_height)
 
     def validate(self):
 
@@ -285,14 +263,16 @@ class In(Node):
     def validate(self):
         super().validate()
         all_case = all([c.token.token_type == TokenType.CASE
-                        for c in self.children])
+                        for c in self.noncomments])
         if not all_case:
             raise CompilerError('#in requires all childs to be a #case')
-        self.alias = allocate_case_label()
+
+        label = allocate_case_label()
+        self.alias = f'{label}:'
         for child in self.children:
             child.children[1] = Opcode(child.children[1].token,
                                        spec=langspec.opcodes['b'],
-                                       immediate_args_override=[self.alias],
+                                       immediate_args_override=[label],
                                        children=[child.children[1]],
                                        config=Config)
 
@@ -301,14 +281,16 @@ class Case(Node):
 
     def validate(self):
         super().validate()
-        if len(self.children) != 2:
+        if len(self.noncomments) != 2:
             raise CompilerError('#case requires exactly two childs')
-        self.alias = allocate_case_label()
-        self.children[0] = Opcode(self.children[0].token,
-                                  spec=langspec.opcodes['bz'],
-                                  immediate_args_override=[self.alias],
-                                  children=[self.children[0]],
-                                  config=self.config)
+
+        label = allocate_case_label()
+        self.alias = f'{label}:'
+        self.noncomments[0] = Opcode(self.noncomments[0].token,
+                                     spec=langspec.opcodes['bz'],
+                                     immediate_args_override=[label],
+                                     children=[self.noncomments[0]],
+                                     config=self.config)
 
 
 class While(Node):
@@ -317,6 +299,63 @@ class While(Node):
 
 class Function(Node):
     pass
+
+
+class Variable(Opcode):
+
+    def validate(self):
+        if self.noncomments:
+            index = allocate_scratch_space(self.token.value)
+            if index < 0:
+                raise CompilerError('Scratch space overflow', token=self.token)
+            self.immediate_args_override = [str(index)]
+            self.doc = self.token.value
+            self.spec = langspec.opcodes['store']
+        else:
+            index = refer_scratch_space(self.token.value)
+            if index < 0:
+                raise CompilerError('Scratch space not found',
+                                    token=self.token)
+            self.immediate_args_override = [str(index)]
+            self.doc = self.token.value
+            self.spec = langspec.opcodes['load']
+        super().validate()
+
+
+class Const(Opcode):
+
+    assigned: Optional[Opcode] = None
+
+    def validate(self):
+        if self.noncomments:
+            if len(self.noncomments) != 1:
+                raise CompilerError('constants requires only one single child')
+            self.assigned = self.noncomments[0]
+            valid_childs = [TokenType.BYTE, TokenType.INT]
+            if self.assigned.token.token_type not in valid_childs:
+                raise CompilerError(
+                    f'constants accepts only the following: {valid_childs}'
+                )
+            if self.token.value in constants:
+                raise CompilerError(
+                    f'constant already defined {self.token.value}'
+                )
+
+            constants[self.token.value] = self.assigned
+        else:
+            try:
+                self.assigned = constants[self.command]
+            except KeyError:
+                raise CompilerError('Constant not defined yet',
+                                    token=self.token)
+
+        self.spec = self.assigned.spec
+        super().validate()
+
+    def emit(self) -> List[str]:
+        if self.noncomments:
+            return []
+        return self.assigned.emit()
 
 
 class Root(Node):
