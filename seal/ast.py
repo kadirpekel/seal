@@ -192,7 +192,14 @@ class Opcode(Node):
 
     @property
     def children_height(self) -> int:
-        return sum([len(c.spec.returns or []) for c in self.children or []])
+        total_height = 0
+        for child in self.children or []:
+            assigned = child
+            if isinstance(assigned, Const):
+                assigned = assigned.assigned
+            if assigned.spec.returns:
+                total_height += len(assigned.spec.returns)
+        return total_height
 
     @property
     def return_height(self) -> int:
@@ -309,7 +316,7 @@ class Variable(Opcode):
                 raise CompilerError('Scratch space overflow', token=self.token)
             self.immediate_args_override = [str(index)]
             self.doc = self.token.value
-            self.spec = langspec.opcodes['store']
+            self.alias = 'store'
         else:
             index = refer_scratch_space(self.token.value)
             if index < 0:
@@ -317,11 +324,11 @@ class Variable(Opcode):
                                     token=self.token)
             self.immediate_args_override = [str(index)]
             self.doc = self.token.value
-            self.spec = langspec.opcodes['load']
+            self.alias = 'load'
         super().validate()
 
 
-class Const(Opcode):
+class Const(Node):
 
     assigned: Optional[Opcode] = None
 
@@ -348,7 +355,6 @@ class Const(Opcode):
                 raise CompilerError(f'Constant {self.command} not defined yet',
                                     token=self.token)
 
-        self.spec = self.assigned.spec
         super().validate()
 
     def emit(self) -> List[str]:
