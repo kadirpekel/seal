@@ -11,11 +11,10 @@ from seal import langspec
 
 @command
 @arg('file', help='file to read')
-@arg('strict', '-s', help="strict mode", action='store_true')
 @arg('pragma_version', '-p', help="pragma version", type=int)
-def compile(path, pragma_version=8, strict=False):
+def compile(path, pragma_version=8):
     with open(path, encoding='utf-8') as f:
-        config = Config(strict=strict, pragma_version=pragma_version)
+        config = Config(pragma_version=pragma_version)
         try:
             print(Node.from_file(f, config=config))
         except CompilerError as e:

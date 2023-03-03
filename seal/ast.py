@@ -1,21 +1,22 @@
 from io import IOBase, StringIO
 from typing import TypeVar, Generic, List, Generator, Optional, Dict
 from dataclasses import dataclass
-
+from collections import defaultdict
 from seal import langspec
 from seal.config import Config
 from seal.scanner import TokenType, Token, scan
 
 max_scratch_space = 256
 scratch_space: List[str] = []
-case_counter = 0
+label_counter = defaultdict(lambda: 0)
 constants: Dict[str, str or int] = {}
 
 
-def allocate_case_label() -> int:
-    global case_counter
-    alias = 'label_{}'.format(case_counter)
-    case_counter += 1
+def allocate_label(label: str = None) -> int:
+    label = label or 'label'
+    counter = label_counter[label]
+    alias = f'{label}_{counter}'
+    label_counter[label] += 1
     return alias
 
 
@@ -55,17 +56,8 @@ class Node(Generic[T]):
     alias: Optional[str] = None
 
     @property
-    def noncomments(self) -> List[T]:
-        if self.children:
-            return list(
-                filter(lambda c: c.token.token_type != TokenType.COMMENT,
-                       self.children)
-            )
-        return []
-
-    @property
     def command(self) -> str:
-        return '{}'.format(self.alias) if self.alias else self.token.head
+        return self.alias or self.token.head
 
     @property
     def immediate_args(self) -> List[str]:
@@ -154,26 +146,20 @@ class Node(Generic[T]):
                                      children=children,
                                      config=config)
         elif token.token_type == TokenType.OPCODE:
-            try:
-                return Opcode(token,
-                              children=children,
-                              spec=langspec.opcodes[token.head],
-                              config=config)
-            except KeyError:
-                raise CompilerError('Invalid opcode', token=token)
+            return Opcode(token, children=children, config=config)
         elif token.token_type == TokenType.VARIABLE:
             return Variable(token, children=children, config=config)
         elif token.token_type == TokenType.CONSTANT:
             return Const(token, children=children, config=config)
         elif token.token_type == TokenType.BYTE:
             return Opcode(token,
-                          spec=langspec.opcodes['byte'],
+                          alias='byte',
                           children=children,
                           immediate_args_override=[token.value],
                           config=config)
         elif token.token_type == TokenType.INT:
             return Opcode(token,
-                          spec=langspec.opcodes['int'],
+                          alias='int',
                           children=children,
                           immediate_args_override=[token.value],
                           config=config)
@@ -196,7 +182,9 @@ class Node(Generic[T]):
 @dataclass
 class Opcode(Node):
 
-    spec: langspec.Opcode = None
+    NONSTRICT_FLAG = '`'
+
+    spec: Optional[langspec.Opcode] = None
 
     @property
     def statement(self) -> str:
@@ -204,7 +192,7 @@ class Opcode(Node):
 
     @property
     def children_height(self) -> int:
-        return sum([len(c.spec.returns or []) for c in self.noncomments])
+        return sum([len(c.spec.returns or []) for c in self.children or []])
 
     @property
     def return_height(self) -> int:
@@ -214,16 +202,29 @@ class Opcode(Node):
     def arg_height(self) -> int:
         return len(self.spec.args or [])
 
+    @property
+    def command(self) -> str:
+        return self.alias or self.token.head.lstrip(self.NONSTRICT_FLAG)
+
     def validate(self):
 
         super().validate()
 
-        if self.spec.args:
-            if self.config.strict and self.arg_height != self.children_height:
-                raise CompilerError('Invalid number of stack args',
-                                    token=self.token)
+        try:
+            self.spec = langspec.opcodes[self.command]
+        except KeyError:
+            raise CompilerError('Invalid opcode', token=self.token)
 
-        if self.config.strict and self.spec.immediate_args:
+        nonstrict = self.token.value.startswith(self.NONSTRICT_FLAG)
+
+        if nonstrict:
+            return
+
+        if self.arg_height != self.children_height:
+            raise CompilerError('Invalid number of stack args',
+                                token=self.token)
+
+        if self.spec.immediate_args:
             if len(self.immediate_args) != len(self.spec.immediate_args):
                 raise CompilerError('Invalid number of immediate args',
                                     token=self.token)
@@ -262,35 +263,33 @@ class In(Node):
 
     def validate(self):
         super().validate()
+        if not self.children or len(self.children) < 2:
+            raise CompilerError('#in requires 2 childs at min')
+
         all_case = all([c.token.token_type == TokenType.CASE
-                        for c in self.noncomments])
+                        for c in self.children])
         if not all_case:
             raise CompilerError('#in requires all childs to be a #case')
 
-        label = allocate_case_label()
+        label = allocate_label('in')
         self.alias = f'{label}:'
+
         for child in self.children:
-            child.children[1] = Opcode(child.children[1].token,
-                                       spec=langspec.opcodes['b'],
-                                       immediate_args_override=[label],
-                                       children=[child.children[1]],
-                                       config=Config)
+            child.children.append(
+                Opcode(Token(token_type=TokenType.OPCODE, value=f'b.{label}')))
 
 
 class Case(Node):
 
     def validate(self):
         super().validate()
-        if len(self.noncomments) != 2:
+        if not self.children or len(self.children) != 2:
             raise CompilerError('#case requires exactly two childs')
 
-        label = allocate_case_label()
+        label = allocate_label('case')
         self.alias = f'{label}:'
-        self.noncomments[0] = Opcode(self.noncomments[0].token,
-                                     spec=langspec.opcodes['bz'],
-                                     immediate_args_override=[label],
-                                     children=[self.noncomments[0]],
-                                     config=self.config)
+        self.children.insert(0, Opcode(
+            Token(token_type=TokenType.OPCODE, value=f'b.{label}')))
 
 
 class While(Node):
@@ -304,7 +303,7 @@ class Function(Node):
 class Variable(Opcode):
 
     def validate(self):
-        if self.noncomments:
+        if self.children:
             index = allocate_scratch_space(self.token.value)
             if index < 0:
                 raise CompilerError('Scratch space overflow', token=self.token)
@@ -327,10 +326,10 @@ class Const(Opcode):
     assigned: Optional[Opcode] = None
 
     def validate(self):
-        if self.noncomments:
-            if len(self.noncomments) != 1:
+        if self.children:
+            if len(self.children) != 1:
                 raise CompilerError('Constants requires only one single child')
-            self.assigned = self.noncomments[0]
+            self.assigned = self.children[0]
             valid_childs = [TokenType.BYTE, TokenType.INT]
             if self.assigned.token.token_type not in valid_childs:
                 raise CompilerError(
@@ -353,7 +352,7 @@ class Const(Opcode):
         super().validate()
 
     def emit(self) -> List[str]:
-        if self.noncomments:
+        if self.children:
             return []
         return self.assigned.emit()
 

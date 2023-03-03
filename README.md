@@ -19,9 +19,6 @@ SEAL does not add any additional layers of abstraction to the TEAL language. By 
 See a minimal example below to experience how SEAL enhances the readability and ease-of-use of TEAL:
 
 ```typescript
-#pragma.version.8
-
-`This is how you construct conditional cases`
 (#in
   (#case (== txn.ApplicationID 0)
     (return 1)
@@ -35,16 +32,16 @@ See a minimal example below to experience how SEAL enhances the readability and 
     )
   )
 )
+
 err
 
-(visit: `natural labels`
-  ($visits (+ (app_local_get 0 "visits") 1)) `This is how you assign vars (scratch space)`
-  (app_local_put 0 "visits" $visits) `And refer`
+(visit:
+  ($visits (+ (app_local_get 0 "visits") 1))
+  (app_local_put 0 "visits" $visits)
   (return 1)
 )
 
 err
-
 ```
 
 Simply compile your seal code to convert it to a valid TEAL language.

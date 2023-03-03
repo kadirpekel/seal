@@ -1,4 +1,3 @@
-`This is how you construct conditional cases`
 (#in
   (#case (== txn.ApplicationID 0)
     (return 1)
@@ -15,9 +14,9 @@
 
 err
 
-(visit: `natural labels`
-  ($visits (+ (app_local_get 0 "visits") 1)) `This is how you assign vars (scratch space)`
-  (app_local_put 0 "visits" $visits) `And refer`
+(visit:
+  ($visits (+ (app_local_get 0 "visits") 1))
+  (app_local_put 0 "visits" $visits) 
   (return 1)
 )
 

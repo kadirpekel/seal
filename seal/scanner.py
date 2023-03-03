@@ -1,11 +1,11 @@
 import sys
 from enum import Enum
-from typing import TextIO, Generator, List, Tuple, TypeVar, Generic
+from typing import TextIO, Generator, List, Tuple, TypeVar, Generic, Optional
 from collections.abc import Callable
 from dataclasses import dataclass
 
 STRING_DELIMETER = '"'
-COMMENT_DELIMETER = '`'
+COMMENT_DELIMETER = '\''
 LABEL_SUFFIX = ':'
 LEFT_PAREN = '('
 RIGHT_PAREN = ')'
@@ -47,13 +47,13 @@ class Token(Generic[T]):
 
     token_type: TokenType
     value: str
-    line: int
-    location: int
-    col: int
+    line: Optional[int] = 0
+    loc: Optional[int] = 0
+    col: Optional[int] = 0
 
     @classmethod
     def root(cls) -> T:
-        return Token(token_type=TokenType.ROOT, value='', line=0, location=0,
+        return Token(token_type=TokenType.ROOT, value='', line=0, loc=0,
                      col=0)
 
     @property
@@ -76,17 +76,17 @@ def scan(f: TextIO) -> Generator[Token, None, None]:
 
     line = 1
     col = 1
-    location = 0
+    loc = 0
 
     def consume_one() -> str:
-        nonlocal line, location, col
+        nonlocal line, loc, col
         c = f.read(1)
         if c == NEWLINE:
             line += 1
             col = 1
         else:
             col += 1
-        location += 1
+        loc += 1
         return c
 
     def consume(unless: Callable, c: str) -> Tuple[str, str]:
@@ -101,7 +101,7 @@ def scan(f: TextIO) -> Generator[Token, None, None]:
 
     def token(*args, **kwargs):
         kwargs['line'] = line
-        kwargs['location'] = location
+        kwargs['loc'] = loc
         kwargs['col'] = col
         return Token(*args, **kwargs)
 
