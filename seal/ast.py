@@ -329,16 +329,16 @@ class Const(Opcode):
     def validate(self):
         if self.noncomments:
             if len(self.noncomments) != 1:
-                raise CompilerError('constants requires only one single child')
+                raise CompilerError('Constants requires only one single child')
             self.assigned = self.noncomments[0]
             valid_childs = [TokenType.BYTE, TokenType.INT]
             if self.assigned.token.token_type not in valid_childs:
                 raise CompilerError(
-                    f'constants accepts only the following: {valid_childs}'
+                    f'Constants accepts only the following: {valid_childs}'
                 )
             if self.token.value in constants:
                 raise CompilerError(
-                    f'constant already defined {self.token.value}'
+                    f'Constant already defined {self.token.value}'
                 )
 
             constants[self.token.value] = self.assigned
@@ -346,7 +346,7 @@ class Const(Opcode):
             try:
                 self.assigned = constants[self.command]
             except KeyError:
-                raise CompilerError('Constant not defined yet',
+                raise CompilerError(f'Constant {self.command} not defined yet',
                                     token=self.token)
 
         self.spec = self.assigned.spec

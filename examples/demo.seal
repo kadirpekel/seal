@@ -1,1 +1,24 @@
-(== @i 4)
+`This is how you construct conditional cases`
+(#in
+  (#case (== txn.ApplicationID 0)
+    (return 1)
+  )
+  (#case (== txn.OnCompletion int.OptIn)
+    (return 1)
+  )
+  (#case (== txn.OnCompletion int.NoOp)
+    (#case (== txna.ApplicationArgs.0 "visit")
+        b.visit
+    )
+  )
+)
+
+err
+
+(visit: `natural labels`
+  ($visits (+ (app_local_get 0 "visits") 1)) `This is how you assign vars (scratch space)`
+  (app_local_put 0 "visits" $visits) `And refer`
+  (return 1)
+)
+
+err
