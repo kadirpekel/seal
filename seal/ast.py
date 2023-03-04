@@ -21,6 +21,9 @@ def allocate_label(label: str = None) -> int:
 
 
 def allocate_scratch_space(name: str) -> int:
+    index = refer_scratch_space(name)
+    if index >= 0:
+        return index
     index = len(scratch_space)
     if index < max_scratch_space:
         scratch_space.append(name)
@@ -50,7 +53,6 @@ class Node(Generic[T]):
 
     token: Token
     children: Optional[List[T]] = None
-    immediate_args_override: Optional[List[str]] = None
     doc: Optional[str] = None
     config: Optional[Config] = None
     alias: Optional[str] = None
@@ -60,12 +62,8 @@ class Node(Generic[T]):
         return self.alias or self.token.head
 
     @property
-    def immediate_args(self) -> List[str]:
-        return self.immediate_args_override or self.token.rest
-
-    @property
     def statement(self) -> str:
-        return ' '.join([self.command, *self.immediate_args])
+        return self.command
 
     def __post_init__(self):
         self.validate()
@@ -175,6 +173,8 @@ class Node(Generic[T]):
             return While(token, children=children, config=config)
         elif token.token_type == TokenType.FN:
             return Function(token, children=children, config=config)
+        elif token.token_type == TokenType.ITXN:
+            return ITxn(token, children=children, config=config)
 
         raise CompilerError('Invalid token', token=token)
 
@@ -185,6 +185,11 @@ class Opcode(Node):
     NONSTRICT_FLAG = '`'
 
     spec: Optional[langspec.Opcode] = None
+    immediate_args_override: Optional[List[str]] = None
+
+    @property
+    def immediate_args(self) -> List[str]:
+        return self.immediate_args_override or self.token.rest
 
     @property
     def statement(self) -> str:
@@ -194,11 +199,14 @@ class Opcode(Node):
     def children_height(self) -> int:
         total_height = 0
         for child in self.children or []:
-            assigned = child
-            if isinstance(assigned, Const):
-                assigned = assigned.assigned
-            if assigned.spec.returns:
-                total_height += len(assigned.spec.returns)
+            if isinstance(child, Const):
+                if child.children:
+                    child = child.children[0]
+                else:
+                    child = constants[child.command]
+
+            if isinstance(child, Opcode) and child.spec.returns:
+                total_height += len(child.spec.returns)
         return total_height
 
     @property
@@ -254,8 +262,10 @@ class Opcode(Node):
 class Label(Node):
 
     def emit(self) -> List[str]:
-        lines = super().emit()
-        lines.insert(0, lines.pop())
+        lines = []
+        lines.append(self.command)
+        for child in self.children:
+            lines.extend(child.emit())
         return lines
 
 
@@ -278,29 +288,52 @@ class In(Node):
         if not all_case:
             raise CompilerError('#in requires all childs to be a #case')
 
+    def emit(self) -> List[str]:
         label = allocate_label('in')
-        self.alias = f'{label}:'
-
+        lines = []
         for child in self.children:
-            child.children.append(
-                Opcode(Token(token_type=TokenType.OPCODE, value=f'b.{label}')))
+            lines.extend(child.emit())
+            lines.append(f'b {label}')
+        lines.append(f'{label}:')
+        return lines
 
 
 class Case(Node):
 
     def validate(self):
         super().validate()
-        if not self.children or len(self.children) != 2:
-            raise CompilerError('#case requires exactly two childs')
+        if not self.children or len(self.children) < 2:
+            raise CompilerError('#case requires min two childs')
 
+    def emit(self) -> List[str]:
         label = allocate_label('case')
-        self.alias = f'{label}:'
-        self.children.insert(0, Opcode(
-            Token(token_type=TokenType.OPCODE, value=f'b.{label}')))
+        lines = []
+        lines.extend(self.children[0].emit())
+        lines.append(f'bz {label}')
+        for child in self.children[1:]:
+            lines.extend(child.emit())
+        lines.append(f'{label}:')
+        return lines
 
 
 class While(Node):
-    pass
+
+    def validate(self):
+        super().validate()
+        if not self.children or len(self.children) < 2:
+            raise CompilerError('#while requires min two childs')
+
+    def emit(self) -> List[str]:
+        label = allocate_label('while')
+        lines = []
+        lines.append(f'{label}:')
+        lines.extend(self.children[0].emit())
+        lines.append(f'bz {label}_end')
+        for child in self.children[1:]:
+            lines.extend(child.emit())
+        lines.append(f'b {label}')
+        lines.append(f'{label}_end:')
+        return lines
 
 
 class Function(Node):
@@ -311,34 +344,32 @@ class Variable(Opcode):
 
     def validate(self):
         if self.children:
-            index = allocate_scratch_space(self.token.value)
+            index = allocate_scratch_space(self.command)
             if index < 0:
                 raise CompilerError('Scratch space overflow', token=self.token)
             self.immediate_args_override = [str(index)]
-            self.doc = self.token.value
+            self.doc = self.command
             self.alias = 'store'
         else:
-            index = refer_scratch_space(self.token.value)
+            index = refer_scratch_space(self.command)
             if index < 0:
                 raise CompilerError('Scratch space not found',
                                     token=self.token)
             self.immediate_args_override = [str(index)]
-            self.doc = self.token.value
+            self.doc = self.command
             self.alias = 'load'
         super().validate()
 
 
 class Const(Node):
 
-    assigned: Optional[Opcode] = None
-
     def validate(self):
+        super().validate()
         if self.children:
             if len(self.children) != 1:
                 raise CompilerError('Constants requires only one single child')
-            self.assigned = self.children[0]
             valid_childs = [TokenType.BYTE, TokenType.INT]
-            if self.assigned.token.token_type not in valid_childs:
+            if self.children[0].token.token_type not in valid_childs:
                 raise CompilerError(
                     f'Constants accepts only the following: {valid_childs}'
                 )
@@ -347,26 +378,41 @@ class Const(Node):
                     f'Constant already defined {self.token.value}'
                 )
 
-            constants[self.token.value] = self.assigned
+            constants[self.command] = self.children[0]
         else:
-            try:
-                self.assigned = constants[self.command]
-            except KeyError:
+            if self.command not in constants:
                 raise CompilerError(f'Constant {self.command} not defined yet',
                                     token=self.token)
-
-        super().validate()
 
     def emit(self) -> List[str]:
         if self.children:
             return []
-        return self.assigned.emit()
+        return constants[self.command].emit()
 
 
 class Root(Node):
 
     def emit(self) -> List[str]:
-        lines = super().emit()
-        lines.insert(0,
-                     '#pragma version {}'.format(self.config.pragma_version))
+        lines = ['#pragma version {}'.format(self.config.pragma_version)]
+        lines.extend(super().emit())
+        return lines
+
+
+class ITxn(Node):
+
+    def validate(self):
+        super().validate()
+        if not self.children or len(self.children) == 0:
+            raise CompilerError('#itxn requires 1 childs at min')
+
+        all_field = all([c.command == 'itxn_field' for c in self.children])
+        if not all_field:
+            raise CompilerError('#itxn requires all childs to be a itxn_field')
+
+    def emit(self) -> List[str]:
+        lines = []
+        lines.append('itxn_begin')
+        for child in self.children[1:]:
+            lines.extend(child.emit())
+        lines.append('itxn_submit')
         return lines

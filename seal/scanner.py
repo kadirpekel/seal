@@ -16,6 +16,7 @@ IN = '#in'
 CASE = '#case'
 WHILE = '#while'
 FN = '#fn'
+ITXN = '#itxn'
 
 
 TERMINALS = [LEFT_PAREN, RIGHT_PAREN, STRING_DELIMETER, NEWLINE]
@@ -34,7 +35,8 @@ TokenType = Enum('TokenType', [
     'WHILE',
     'FN',
     'ROOT',
-    'CONSTANT'
+    'CONSTANT',
+    'ITXN',
 ])
 
 
@@ -140,6 +142,8 @@ def scan(f: TextIO) -> Generator[Token, None, None]:
                 yield token(TokenType.WHILE, value)
             elif value == FN:
                 yield token(TokenType.FN, value)
+            elif value == ITXN:
+                yield token(TokenType.ITXN, value)
             else:
                 yield token(TokenType.OPCODE, value)
         else:

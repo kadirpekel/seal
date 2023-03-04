@@ -1,5 +1,4 @@
-(itxn_submit
-    itxn_begin
+(#itxn
     (itxn_field.AssetAmount 1000)
     (itxn_field.XferAsset txna.Assets.0)
     (itxn_field.AssetReceiver txn.Sender)

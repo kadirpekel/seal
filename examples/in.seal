@@ -8,10 +8,10 @@
   (#case (== txn.OnCompletion int.NoOp)
     (#in
         (#case (== txna.ApplicationArgs.0 "a")
-            b.action_a
+            (return 1)
         )
         (#case (== txna.ApplicationArgs.0 "b")
-            b.action_b
+            (return 1)
         )
         (#case 1 b.action_default)
     )
@@ -19,12 +19,6 @@
 )
 err
 
-(action_a: 
-    (return 1)
-)
-(action_b: 
-    (return 1)
-)
 (action_default:
     (return 1)
 )
