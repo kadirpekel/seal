@@ -5,7 +5,7 @@ from dataclasses import asdict
 from komandr import command, arg, main as komandr_main
 
 from seal.config import Config
-from seal.ast import Node, CompilerError
+from seal.ast import Node, NodeError
 from seal import langspec
 
 
@@ -17,7 +17,7 @@ def compile(path, pragma_version=8):
         config = Config(pragma_version=pragma_version)
         try:
             print(Node.from_file(f, config=config))
-        except CompilerError as e:
+        except NodeError as e:
             print('Compiler error: {}'.format(str(e)), file=sys.stderr)
             if e.token:
                 print('Ln: {}, Col: {}, Token: {}'.format(

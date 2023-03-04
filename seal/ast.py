@@ -38,7 +38,7 @@ def refer_scratch_space(name) -> int:
         return -1
 
 
-class CompilerError(Exception):
+class NodeError(Exception):
 
     def __init__(self, msg, token: Token = None):
         super().__init__(msg)
@@ -138,7 +138,7 @@ class Node(Generic[T]):
                 children.append(child)
                 token = next(tokens)
             if token.token_type != TokenType.END:
-                raise CompilerError('Unclosed expression', token=token)
+                raise NodeError('Unclosed expression', token=token)
             return Node._from_tokens(tokens,
                                      head=head,
                                      children=children,
@@ -176,7 +176,7 @@ class Node(Generic[T]):
         elif token.token_type == TokenType.ITXN:
             return ITxn(token, children=children, config=config)
 
-        raise CompilerError('Invalid token', token=token)
+        raise NodeError('Invalid token', token=token)
 
 
 @dataclass
@@ -228,7 +228,7 @@ class Opcode(Node):
         try:
             self.spec = langspec.opcodes[self.command]
         except KeyError:
-            raise CompilerError('Invalid opcode', token=self.token)
+            raise NodeError('Invalid opcode', token=self.token)
 
         nonstrict = self.token.value.startswith(self.NONSTRICT_FLAG)
 
@@ -236,20 +236,19 @@ class Opcode(Node):
             return
 
         if self.arg_height != self.children_height:
-            raise CompilerError('Invalid number of stack args',
-                                token=self.token)
+            raise NodeError('Invalid number of stack args', token=self.token)
 
         if self.spec.immediate_args:
             if len(self.immediate_args) != len(self.spec.immediate_args):
-                raise CompilerError('Invalid number of immediate args',
-                                    token=self.token)
+                raise NodeError('Invalid number of immediate args',
+                                token=self.token)
 
             for i, arg in enumerate(self.immediate_args):
                 spec = self.spec.immediate_args[i]
                 if spec.reference:
                     enums = langspec.fields[self.command]
                     if arg not in enums:
-                        raise CompilerError(
+                        raise NodeError(
                             'Invalid arg, need one of the following: {}'
                             .format(', '.join(enums)),
                             token=self.token
@@ -281,12 +280,12 @@ class In(Node):
     def validate(self):
         super().validate()
         if not self.children or len(self.children) < 2:
-            raise CompilerError('#in requires 2 childs at min')
+            raise NodeError('#in requires 2 childs at min')
 
         all_case = all([c.token.token_type == TokenType.CASE
                         for c in self.children])
         if not all_case:
-            raise CompilerError('#in requires all childs to be a #case')
+            raise NodeError('#in requires all childs to be a #case')
 
     def emit(self) -> List[str]:
         label = allocate_label('in')
@@ -303,7 +302,7 @@ class Case(Node):
     def validate(self):
         super().validate()
         if not self.children or len(self.children) < 2:
-            raise CompilerError('#case requires min two childs')
+            raise NodeError('#case requires min two childs')
 
     def emit(self) -> List[str]:
         label = allocate_label('case')
@@ -321,7 +320,7 @@ class While(Node):
     def validate(self):
         super().validate()
         if not self.children or len(self.children) < 2:
-            raise CompilerError('#while requires min two childs')
+            raise NodeError('#while requires min two childs')
 
     def emit(self) -> List[str]:
         label = allocate_label('while')
@@ -346,15 +345,14 @@ class Variable(Opcode):
         if self.children:
             index = allocate_scratch_space(self.command)
             if index < 0:
-                raise CompilerError('Scratch space overflow', token=self.token)
+                raise NodeError('Scratch space overflow', token=self.token)
             self.immediate_args_override = [str(index)]
             self.doc = self.command
             self.alias = 'store'
         else:
             index = refer_scratch_space(self.command)
             if index < 0:
-                raise CompilerError('Scratch space not found',
-                                    token=self.token)
+                raise NodeError('Scratch space not found', token=self.token)
             self.immediate_args_override = [str(index)]
             self.doc = self.command
             self.alias = 'load'
@@ -367,22 +365,22 @@ class Const(Node):
         super().validate()
         if self.children:
             if len(self.children) != 1:
-                raise CompilerError('Constants requires only one single child')
+                raise NodeError('Constants requires only one single child')
             valid_childs = [TokenType.BYTE, TokenType.INT]
             if self.children[0].token.token_type not in valid_childs:
-                raise CompilerError(
+                raise NodeError(
                     f'Constants accepts only the following: {valid_childs}'
                 )
             if self.token.value in constants:
-                raise CompilerError(
+                raise NodeError(
                     f'Constant already defined {self.token.value}'
                 )
 
             constants[self.command] = self.children[0]
         else:
             if self.command not in constants:
-                raise CompilerError(f'Constant {self.command} not defined yet',
-                                    token=self.token)
+                raise NodeError(f'Constant {self.command} not defined yet',
+                                token=self.token)
 
     def emit(self) -> List[str]:
         if self.children:
@@ -403,11 +401,11 @@ class ITxn(Node):
     def validate(self):
         super().validate()
         if not self.children or len(self.children) == 0:
-            raise CompilerError('#itxn requires 1 childs at min')
+            raise NodeError('#itxn requires 1 childs at min')
 
         all_field = all([c.command == 'itxn_field' for c in self.children])
         if not all_field:
-            raise CompilerError('#itxn requires all childs to be a itxn_field')
+            raise NodeError('#itxn requires all childs to be a itxn_field')
 
     def emit(self) -> List[str]:
         lines = []
