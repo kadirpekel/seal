@@ -57,32 +57,32 @@ Our `seal` code will be compiled into a perfectly valid, well organized `teal` f
 txn ApplicationID
 int 0
 ==
-bz label_0
+bz case_0
 int 1
 return
-b label_4
-label_0:
+case_0:
+b in_0
 txn OnCompletion
 int OptIn
 ==
-bz label_1
+bz case_1
 int 1
 return
-b label_4
-label_1:
+case_1:
+b in_0
 txn OnCompletion
 int NoOp
 ==
-bz label_3
+bz case_2
 txna ApplicationArgs 0
 byte "visit"
 ==
-bz label_2
+bz case_3
 b visit
-label_2:
-b label_4
-label_3:
-label_4:
+case_3:
+case_2:
+b in_0
+in_0:
 err
 visit:
 int 0
