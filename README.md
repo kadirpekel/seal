@@ -139,125 +139,6 @@ This code pushes the values 1 and 2 onto the stack, adds them together, pushes t
 
 This code uses the + operator to add the values 1, 2, and 3 together, which are all pushed onto the stack automatically. As you can see, SEAL greatly simplifies the process of writing Algorand smart contracts by providing a more intuitive syntax for stack management.
 
-### Opcodes
-
-In SEAL, any sequence of characters that is not a special syntax element (such as those starting with $ or @) will be treated as a Teal opcode. Teal opcodes are the basic building blocks of Teal programs, and are used to perform various operations on the program's state and data.
-
-Here's a simple demonstration of how opcodes are called in SEAL:
-
-```typescript
-err
-```
-
-Compiles into:
-
-```teal
-err
-```
-
-If any opcode requires stack arguments, you can construct your opcode call using s-expression syntax to manage the stack. For example:
-
-```typescript
-(assert (== 5 (+ 3 2)))
-```
-
-Compiles into:
-
-```teal
-int 5
-int 3
-int 2
-+
-==
-assert
-```
-
-You can chain and nest several opcodes using the lisp-style syntax to create more complex operations.
-
-### Non strict modifier
-
-SEAL by default assumes and checks where opcode calls are perfectly constructed by supplying the desired number of stack args. If you supply wrong number of stack args to any opcode, the compiler will complain about the situation like below:
-
-```typescript
-4
-(assert (== (+ 5) 9))
-```
-
-Compile it:
-
-```bash
-% seal compile hede.seal
-Compiler error: Invalid number of stack args
-Ln: 2, Col: 16, Token: +
-```
-
-Non script modifier will let you construct the opcode calls without enforcing you to provide expected number of stack args. There might be situations where you would like to bypass this check to get a successfull compilation. SEAL provides a very handy syntax for this kind of cases where you can prefix your opcode by using a single quote `'` so that SEAL compiler won't complain. Please see the example below:
-
-```
-4
-(assert (== ('+ 5) 9))
-```
-
-### Fields & Immediate Args
-
-In Algorand, some opcodes like `global`, `txn`, `txna`, `gtxn`, `itxn_field` and several others behave like namespaces for accessing various transactional and global data in a smart contract. Also there are many other opcodes like `substring` accepting immediate arguments such as `start` and `end` to adjust the behaviour of regarding opcode rather than stack arguments.
-
-SEAL provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace. Or to call `substring` accompanied with immediate args like `substring.3.5`.
-
-Please find below to find out how dot notation is used to achieve specific use cases:
-
-```typescript
-(== txna.ApplicationArgs.0 (substring.0.5 "Hello World"))
-```
-
-Compiles into:
-
-```teal
-txna ApplicationArgs 0
-byte "Hello World"
-substring 0 5
-==
-```
-
-### Labels
-
-Labels in Teal are named markers that allow the program to "jump" to a specific point in the code. In SEAL they are defined in similar way by using the syntax `labelname:` where labelname can be any valid identifier. Labels are commonly used with branching opcodes like `b`, `bz`, `bnz`, and many more, which allow the program to change the order of execution based on the instruction.
-
-Here you may find a demonstration on how to use labels in SEAL:
-
-```typescript
-(@case
-    (== txna.ApplicationArgs.0 "foo")
-    b.foo
-)
-err
-
-(foo:
-    (assert
-        (== txna.ApplicationArgs.1 "bar")
-    )
-)
-err
-```
-
-Compiles into:
-
-```teal
-txna ApplicationArgs 0
-byte "foo"
-==
-bz case_0
-b foo
-case_0:
-err
-foo:
-txna ApplicationArgs 1
-byte "bar"
-==
-assert
-err
-```
-
 ### Comments
 
 In SEAL, comments are used to document the code and improve its readability. A comment in SEAL starts with a backtick symbol \` and ends with another backtick symbol \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
@@ -351,6 +232,86 @@ load 1 // $another_var
 
 Please note that the use of variables in SEAL is limited by the scratch space available in Algorand's TEAL language. TEAL has a maximum scratch space size of 256 slots, which limits the number of variables that can be used in a smart contract. It is important to carefully manage the use of variables and their associated memory usage to ensure that your smart contract stays within the limits of the TEAL language.
 
+### Opcodes
+
+In SEAL, any sequence of characters that is not a special syntax element (such as those starting with $ or @) will be treated as a Teal opcode. Teal opcodes are the basic building blocks of Teal programs, and are used to perform various operations on the program's state and data.
+
+Here's a simple demonstration of how opcodes are called in SEAL:
+
+```typescript
+err;
+```
+
+Compiles into:
+
+```teal
+err
+```
+
+If any opcode requires stack arguments, you can construct your opcode call using s-expression syntax to manage the stack. For example:
+
+```typescript
+(assert (== 5 (+ 3 2)))
+```
+
+Compiles into:
+
+```teal
+int 5
+int 3
+int 2
++
+==
+assert
+```
+
+You can chain and nest several opcodes using the lisp-style syntax to create more complex operations.
+
+### Non strict modifier
+
+SEAL by default assumes and checks where opcode calls are perfectly constructed by supplying the desired number of stack args. If you supply wrong number of stack args to any opcode, the compiler will complain about the situation like below:
+
+```typescript
+4
+(assert (== (+ 5) 9))
+```
+
+Compile it:
+
+```bash
+% seal compile hede.seal
+Compiler error: Invalid number of stack args
+Ln: 2, Col: 16, Token: +
+```
+
+Non script modifier will let you construct the opcode calls without enforcing you to provide expected number of stack args. There might be situations where you would like to bypass this check to get a successfull compilation. SEAL provides a very handy syntax for this kind of cases where you can prefix your opcode by using a single quote `'` so that SEAL compiler won't complain. Please see the example below:
+
+```
+4
+(assert (== ('+ 5) 9))
+```
+
+### Fields & Immediate Args
+
+In Algorand, some opcodes like `global`, `txn`, `txna`, `gtxn`, `itxn_field` and several others behave like namespaces for accessing various transactional and global data in a smart contract. Also there are many other opcodes like `substring` accepting immediate arguments such as `start` and `end` to adjust the behaviour of regarding opcode rather than stack arguments.
+
+SEAL provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace. Or to call `substring` accompanied with immediate args like `substring.3.5`.
+
+Please find below to find out how dot notation is used to achieve specific use cases:
+
+```typescript
+(== txna.ApplicationArgs.0 (substring.0.5 "Hello World"))
+```
+
+Compiles into:
+
+```teal
+txna ApplicationArgs 0
+byte "Hello World"
+substring 0 5
+==
+```
+
 ### Conditions
 
 Conditions in SEAL are used for making decisions based on certain conditions. There are two types of conditions: single conditions and compound conditions.
@@ -427,6 +388,45 @@ while_0_end:
 In this example, the `($MAX_SIZE 10)` expression sets a constant MAX_SIZE to 10 where `($i 0)` expression sets a variable `i` to 0. The `(@while (< $i $MAX_SIZE)` expression sets up the while loop and specifies that the loop should continue while `i` is less than `MAX_SIZE`. The `($i (+ $i 1))` expression increments the value of `i` by 1 with each iteration of the loop.
 
 It's important to ensure that the condition in a while loop will eventually evaluate to false, otherwise the loop will run indefinitely, which can cause the program to crash.
+
+### Labels
+
+Labels in Teal are named markers that allow the program to "jump" to a specific point in the code. In SEAL they are defined in similar way by using the syntax `labelname:` where labelname can be any valid identifier. Labels are commonly used with branching opcodes like `b`, `bz`, `bnz`, and many more, which allow the program to change the order of execution based on the instruction.
+
+Here you may find a demonstration on how to use labels in SEAL:
+
+```typescript
+(@case
+    (== txna.ApplicationArgs.0 "foo")
+    b.foo
+)
+err
+
+(foo:
+    (assert
+        (== txna.ApplicationArgs.1 "bar")
+    )
+)
+err
+```
+
+Compiles into:
+
+```teal
+txna ApplicationArgs 0
+byte "foo"
+==
+bz case_0
+b foo
+case_0:
+err
+foo:
+txna ApplicationArgs 1
+byte "bar"
+==
+assert
+err
+```
 
 #### Inner Transactions
 
