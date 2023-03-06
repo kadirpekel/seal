@@ -147,7 +147,7 @@ In Seal, any sequence of characters that is not a special syntax element (such a
 Here's a simple demonstration of how opcodes are called in Seal:
 
 ```typescript
-err;
+err
 ```
 
 Compiles into:
