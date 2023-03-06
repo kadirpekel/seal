@@ -122,7 +122,7 @@ enable strict compiler checks. More information will be available soon.
 
 ### Comments
 
-In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol ``` and ends with another backtick symbol  ```. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
+In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol \` and ends with another backtick symbol  \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
 
 ```typescript
 `This is a single-line comment`
