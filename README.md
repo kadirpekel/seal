@@ -165,7 +165,6 @@ If any opcode requires stack arguments, you can construct your opcode call using
 Compiles into:
 
 ```teal
-#pragma version 8
 int 5
 int 3
 int 2
@@ -176,22 +175,64 @@ assert
 
 You can chain and nest several opcodes using the lisp-style syntax to create more complex operations.
 
-### Fields
+### Fields & Immediate Args
 
-In Algorand, some opcodes like `global`, `txn`, `txna`, `gtxn`, `itxn_field` and several others behave like namespaces for accessing various transactional and global data in a smart contract. Seal provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace.
+In Algorand, some opcodes like `global`, `txn`, `txna`, `gtxn`, `itxn_field` and several others behave like namespaces for accessing various transactional and global data in a smart contract. Also there are many other opcodes like `substring` accepting immediate arguments such as `start` and `end` to adjust the behaviour of regarding opcode rather than stack arguments.
 
-Please find below to find out how dot notation is used to achieve desired functionallity:
+Seal provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace. Or to call `substring` accompanied with immediate args like `substring.3.5`.
+
+Please find below to find out how dot notation is used to achieve specific use cases:
 
 ```typescript
-(== txna.ApplicationArgs.0 "Hello World")
+(== txna.ApplicationArgs.0 (substring.0.5 "Hello World"))
 ```
 
 Compiles into:
 
 ```teal
 txna ApplicationArgs 0
-"Hello World"
+byte "Hello World"
+substring 0 5
 ==
+```
+
+### Labels
+
+Labels in Teal are named markers that allow the program to "jump" to a specific point in the code. In "Seal" they are defined in similar way by using the syntax `labelname:` where labelname can be any valid identifier. Labels are commonly used with branching opcodes like `b`, `bz`, `bnz`, and many more, which allow the program to change the order of execution based on the instruction.
+
+Here you may find a demonstration on how to use labels in "Seal":
+
+```typescript
+(@case
+    (== txna.ApplicationArgs.0 "foo")
+    b.foo
+)
+err
+
+(foo:
+    (assert
+        (== txna.ApplicationArgs.1 "bar")
+    )
+)
+err
+```
+
+Compiles into:
+
+```teal
+txna ApplicationArgs 0
+byte "foo"
+==
+bz case_0
+b foo
+case_0:
+err
+foo:
+txna ApplicationArgs 1
+byte "bar"
+==
+assert
+err
 ```
 
 ### Comments
@@ -334,7 +375,6 @@ This condition will check the value of the variable `$my_var` against the first 
 Compiles into:
 
 ```teal
-#pragma version 8
 itxn_begin
 txna Assets 0
 itxn_field XferAsset
