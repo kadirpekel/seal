@@ -222,7 +222,7 @@ Conditions in "seal" are used for making decisions based on certain conditions. 
 
 Single conditions are constructed using the `@case` operator. The @case operator takes its first expression as the test value and the second expression as the action to take if the test is true. For example:
 
-```
+```typescript
 (@case
     (== $my_var "Hello World")
     (return 1)
@@ -235,7 +235,7 @@ This condition will return 1 if the value of the variable `$my_var` is equal to 
 
 Compound conditions are constructed using the `@in` operator. The `@in` operator expects all of its children to be `@case` statements and works exactly like "if .. else if .. else if" conditions. For example:
 
-```
+```typescript
 (@in
     (@case (== $my_var "Hello World") (return 1))
     (@case (== $my_var "Goodbye World") (return 2))
