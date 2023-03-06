@@ -120,6 +120,27 @@ enable strict compiler checks. More information will be available soon.
 
 ## Documenation
 
+### Comments
+
+In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol ` \`` and ends with another backtick symbol  `\``. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
+
+```
+\`This is a single-line comment\`
+```
+
+You can also write multi-line comments in Seal by using the backtick symbol multiple times. Here's an example:
+
+```
+\`
+This is a
+multi-line
+comment
+\`
+
+```
+
+It's important to note that comments should be used sparingly and only when necessary to explain the code's purpose or implementation. Overuse of comments can make the code harder to read and maintain.
+
 ### Literals
 
 Literals in "seal" are used to represent values of integers and bytes. Integers are compiled to TEAL's `int` opcode, which pushes a 64-bit unsigned integer value onto the TEAL stack, while bytes are compiled to TEAL's `byte` opcode, which pushes a byte string value onto the TEAL stack.
@@ -148,14 +169,18 @@ For example:
 ($MAX_SIZE 42)
 ($MESSAGE "Hello, World!")
 ($TRUE 1)
+
+$MAX_SIZE
+$MESSAGE
+$TRUE
 ```
 
 Compiles into:
 
 ```teal
-int 42
-byte "Hello, World!"
-int 1
+int 42 // $MAX_SIZE
+byte "Hello, World!" // $MESSAGE
+int 1 // $TRUE
 ```
 
 ### Variables
