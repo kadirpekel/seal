@@ -385,7 +385,8 @@ class Const(Node):
     def emit(self) -> List[str]:
         if self.children:
             return []
-        return constants[self.command].emit()
+        line = constants[self.command].emit().pop()
+        return [f'{line} // {self.token.value}']
 
 
 class Root(Node):

@@ -19,12 +19,12 @@ SEAL does not add any additional layers of abstraction to the TEAL language. By 
 See a minimal example below to experience how SEAL enhances the readability and ease-of-use of TEAL:
 
 ```typescript
-($$MAX_SIZE 0) `This is a constant`
+($$MAX_SIZE 10) `This is a constant`
 
 ($i 0) `Variable assignment`
 
 `While loop using reading and incrementing $i`
-(@while (< $i 10)
+(@while (< $i $$MAX_SIZE)
     ($i (+ $i 1))
 )
 ```
@@ -43,7 +43,7 @@ int 0
 store 0 // $i
 while_0:
 load 0 // $i
-int 10
+int 10 // $$MAX_SIZE
 <
 bz while_0_end
 load 0 // $i
