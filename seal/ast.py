@@ -283,16 +283,19 @@ class In(Node):
             raise NodeError('#in requires 2 childs at min')
 
         all_case = all([c.token.token_type == TokenType.CASE
-                        for c in self.children])
+                        for c in self.children[:-1]])
         if not all_case:
-            raise NodeError('#in requires all childs to be a #case')
+            raise NodeError(
+                '#in requires all childs to be a #case except the last')
 
     def emit(self) -> List[str]:
         label = allocate_label('in')
         lines = []
         for child in self.children:
-            lines.extend(child.emit())
-            lines.append(f'b {label}')
+            child_lines = child.emit()
+            if isinstance(child, Case):
+                child_lines.insert(-1, f'b {label}')
+            lines.extend(child_lines)
         lines.append(f'{label}:')
         return lines
 
