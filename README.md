@@ -120,13 +120,67 @@ enable strict compiler checks. More information will be available soon.
 
 ## Documenation
 
+Seal simplifies the process of writing smart contracts in Algorand's teal language by providing a more concise syntax for managing the stack. With seal, you can use embedded s-expressions to define and manipulate the stack in a more intuitive way. This makes it easier to write and maintain complex smart contracts.
+
+For example, consider the following code in original teal:
+
+```teal
+int 1
+int 2
++
+int 3
++
+```
+
+This code pushes the values 1 and 2 onto the stack, adds them together, pushes the value 3 onto the stack, and adds it to the previous result. Using seal, you could write the same code more concisely like this:
+
+```typescript
+(+ 1 2 3)
+```
+
+This code uses the + operator to add the values 1, 2, and 3 together, which are all pushed onto the stack automatically. As you can see, seal greatly simplifies the process of writing Algorand smart contracts by providing a more intuitive syntax for stack management.
+
+### Opcodes
+
+In Seal, any sequence of characters that is not a special syntax element (such as those starting with $ or @) will be treated as a Teal opcode. Teal opcodes are the basic building blocks of Teal programs, and are used to perform various operations on the program's state and data.
+
+Here's a simple demonstration of how opcodes are called in Seal:
+
+```typescript
+err;
+```
+
+Compiles into:
+
+```teal
+err
+```
+
+If any opcode requires stack arguments, you can construct your opcode call using s-expression syntax to manage the stack. For example:
+
+```typescript
+(assert (== 5 (+ 3 2)))
+```
+
+Compiles into:
+
+```teal
+#pragma version 8
+int 5
+int 3
+int 2
++
+==
+assert
+```
+
+You can chain and nest several opcodes using the lisp-style syntax to create more complex operations.
+
+### Fields
+
 ### Comments
 
-<<<<<<< Updated upstream
-In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol \` and ends with another backtick symbol  \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
-=======
-In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol `and ends with another backtick symbol `. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
->>>>>>> Stashed changes
+In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol \` and ends with another backtick symbol \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
 
 ```typescript
 `This is a single-line comment`;
@@ -155,7 +209,7 @@ Literals can be used in expressions, assigned to variables, and passed as functi
 ("Hello World");
 ```
 
-Compiles to:
+Compiles into:
 
 ```teal
 int 42
@@ -202,7 +256,7 @@ $my_var
 $another_var
 ```
 
-Compiles to:
+Compiles into:
 
 ```teal
 int 42
@@ -247,6 +301,33 @@ Compound conditions are constructed using the `@in` operator. The `@in` operator
 ```
 
 This condition will check the value of the variable `$my_var` against the first `@case` statement, and if it's true, it will return `1`. If it's not true, it will check the second `@case` statement, and so on. If none of the `@case` statements are true, it will return `3`.
+
+#### Inner Transactions
+
+"Seal" introduces the `#itxn` command as a shorthand for inner transactions in Algorand TEAL. The `#itxn` command encapsulates the functionality of `itxn_begin` and `itxn_submit` statements, making it easier for developers to express inner transactions in their smart contracts. With `#itxn`, developers can use `itxn_field` to set any attribute of the inner transaction and commit it eventually.
+
+```typescript
+(@itxn
+    (itxn_field.AssetAmount 1000)
+    (itxn_field.XferAsset txna.Assets.0)
+    (itxn_field.AssetReceiver txn.Sender)
+    (itxn_field.TypeEnum int.axfer)
+)
+```
+
+Compiles into:
+
+```teal
+#pragma version 8
+itxn_begin
+txna Assets 0
+itxn_field XferAsset
+txn Sender
+itxn_field AssetReceiver
+int axfer
+itxn_field TypeEnum
+itxn_submit
+```
 
 ## Disclaimer
 
