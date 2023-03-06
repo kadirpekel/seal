@@ -23,7 +23,7 @@ See a minimal example below to experience how SEAL enhances the readability and 
 
 ($i 0) `Variable assignment`
 
-`While loop using reading and incrementing $i`
+`While loop reading and incrementing $i respectively`
 (@while (< $i $MAX_SIZE)
     ($i (+ $i 1))
 )
