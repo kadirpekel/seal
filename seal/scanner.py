@@ -10,13 +10,13 @@ LABEL_SUFFIX = ':'
 LEFT_PAREN = '('
 RIGHT_PAREN = ')'
 VAR_PREFIX = '$'
-CONST_PREFIX = '@'
+CONST_PREFIX = '$$'
 NEWLINE = '\n'
-IN = '#in'
-CASE = '#case'
-WHILE = '#while'
-FN = '#fn'
-ITXN = '#itxn'
+IN = '@in'
+CASE = '@case'
+WHILE = '@while'
+FN = '@fn'
+ITXN = '@itxn'
 
 
 TERMINALS = [LEFT_PAREN, RIGHT_PAREN, STRING_DELIMETER, NEWLINE]
@@ -130,10 +130,10 @@ def scan(f: TextIO) -> Generator[Token, None, None]:
             c, value = consume(atom_test, c)
             if value.endswith(LABEL_SUFFIX):
                 yield token(TokenType.LABEL, value)
+            elif value.startswith(CONST_PREFIX):  # should be before var check
+                yield token(TokenType.CONSTANT, value)
             elif value.startswith(VAR_PREFIX):
                 yield token(TokenType.VARIABLE, value)
-            elif value.startswith(CONST_PREFIX):
-                yield token(TokenType.CONSTANT, value)
             elif value == IN:
                 yield token(TokenType.IN, value)
             elif value == CASE:

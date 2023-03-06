@@ -1,19 +1,19 @@
-(#in
-  (#case (== txn.ApplicationID 0)
+(@in
+  (@case (== txn.ApplicationID 0)
     (return 1)
   )
-  (#case (== txn.OnCompletion int.OptIn)
+  (@case (== txn.OnCompletion int.OptIn)
     (return 1)
   )
-  (#case (== txn.OnCompletion int.NoOp)
-    (#in
-        (#case (== txna.ApplicationArgs.0 "a")
+  (@case (== txn.OnCompletion int.NoOp)
+    (@in
+        (@case (== txna.ApplicationArgs.0 "a")
             (return 1)
         )
-        (#case (== txna.ApplicationArgs.0 "b")
+        (@case (== txna.ApplicationArgs.0 "b")
             (return 1)
         )
-        (#case 1 b.action_default)
+        (@case 1 b.action_default)
     )
   )
 )

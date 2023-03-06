@@ -19,15 +19,15 @@ SEAL does not add any additional layers of abstraction to the TEAL language. By 
 See a minimal example below to experience how SEAL enhances the readability and ease-of-use of TEAL:
 
 ```typescript
-(#in
-  (#case (== txn.ApplicationID 0)
+(@in
+  (@case (== txn.ApplicationID 0)
     (return 1)
   )
-  (#case (== txn.OnCompletion int.OptIn)
+  (@case (== txn.OnCompletion int.OptIn)
     (return 1)
   )
-  (#case (== txn.OnCompletion int.NoOp)
-    (#case (== txna.ApplicationArgs.0 "visit")
+  (@case (== txn.OnCompletion int.NoOp)
+    (@case (== txna.ApplicationArgs.0 "visit")
         b.visit
     )
   )
