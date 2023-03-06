@@ -29,7 +29,7 @@ See a minimal example below to experience how SEAL enhances the readability and 
 )
 ```
 
-Simply compile your seal code to convert it to a valid TEAL language.
+Simply compile your SEAL code to convert it to a valid TEAL language.
 
 ```bash
 % seal compile demo.seal > demo.teal
@@ -119,7 +119,7 @@ enable strict compiler checks. More information will be available soon.
 
 ## Documenation
 
-Seal simplifies the process of writing smart contracts in Algorand's teal language by providing a more concise syntax for managing the stack. With seal, you can use embedded s-expressions to define and manipulate the stack in a more intuitive way. This makes it easier to write and maintain complex smart contracts.
+SEAL simplifies the process of writing smart contracts in Algorand's teal language by providing a more concise syntax for managing the stack. With SEAL, you can use embedded s-expressions to define and manipulate the stack in a more intuitive way. This makes it easier to write and maintain complex smart contracts.
 
 For example, consider the following code in original teal:
 
@@ -131,22 +131,22 @@ int 3
 +
 ```
 
-This code pushes the values 1 and 2 onto the stack, adds them together, pushes the value 3 onto the stack, and adds it to the previous result. Using seal, you could write the same code more concisely like this:
+This code pushes the values 1 and 2 onto the stack, adds them together, pushes the value 3 onto the stack, and adds it to the previous result. Using SEAL, you could write the same code more concisely like this:
 
 ```typescript
 (+ 1 (+ 2 3))
 ```
 
-This code uses the + operator to add the values 1, 2, and 3 together, which are all pushed onto the stack automatically. As you can see, seal greatly simplifies the process of writing Algorand smart contracts by providing a more intuitive syntax for stack management.
+This code uses the + operator to add the values 1, 2, and 3 together, which are all pushed onto the stack automatically. As you can see, SEAL greatly simplifies the process of writing Algorand smart contracts by providing a more intuitive syntax for stack management.
 
 ### Opcodes
 
-In Seal, any sequence of characters that is not a special syntax element (such as those starting with $ or @) will be treated as a Teal opcode. Teal opcodes are the basic building blocks of Teal programs, and are used to perform various operations on the program's state and data.
+In SEAL, any sequence of characters that is not a special syntax element (such as those starting with $ or @) will be treated as a Teal opcode. Teal opcodes are the basic building blocks of Teal programs, and are used to perform various operations on the program's state and data.
 
-Here's a simple demonstration of how opcodes are called in Seal:
+Here's a simple demonstration of how opcodes are called in SEAL:
 
 ```typescript
-err
+err;
 ```
 
 Compiles into:
@@ -174,11 +174,35 @@ assert
 
 You can chain and nest several opcodes using the lisp-style syntax to create more complex operations.
 
+### Non strict modifier
+
+SEAL by default assumes and checks where opcode calls are perfectly constructed by supplying the desired number of stack args. If you supply wrong number of stack args to any opcode, the compiler will complain about the situation like below:
+
+```typescript
+4
+(assert (== (+ 5) 9))
+```
+
+Compile it:
+
+```bash
+% seal compile hede.seal
+Compiler error: Invalid number of stack args
+Ln: 2, Col: 16, Token: +
+```
+
+Non script modifier will let you construct the opcode calls without enforcing you to provide expected number of stack args. There might be situations where you would like to bypass this check to get a successfull compilation. SEAL provides a very handy syntax for this kind of cases where you can prefix your opcode by using a single quote `'` so that SEAL compiler won't complain. Please see the example below:
+
+```
+4
+(assert (== ('+ 5) 9))
+```
+
 ### Fields & Immediate Args
 
 In Algorand, some opcodes like `global`, `txn`, `txna`, `gtxn`, `itxn_field` and several others behave like namespaces for accessing various transactional and global data in a smart contract. Also there are many other opcodes like `substring` accepting immediate arguments such as `start` and `end` to adjust the behaviour of regarding opcode rather than stack arguments.
 
-Seal provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace. Or to call `substring` accompanied with immediate args like `substring.3.5`.
+SEAL provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace. Or to call `substring` accompanied with immediate args like `substring.3.5`.
 
 Please find below to find out how dot notation is used to achieve specific use cases:
 
@@ -197,9 +221,9 @@ substring 0 5
 
 ### Labels
 
-Labels in Teal are named markers that allow the program to "jump" to a specific point in the code. In "Seal" they are defined in similar way by using the syntax `labelname:` where labelname can be any valid identifier. Labels are commonly used with branching opcodes like `b`, `bz`, `bnz`, and many more, which allow the program to change the order of execution based on the instruction.
+Labels in Teal are named markers that allow the program to "jump" to a specific point in the code. In SEAL they are defined in similar way by using the syntax `labelname:` where labelname can be any valid identifier. Labels are commonly used with branching opcodes like `b`, `bz`, `bnz`, and many more, which allow the program to change the order of execution based on the instruction.
 
-Here you may find a demonstration on how to use labels in "Seal":
+Here you may find a demonstration on how to use labels in SEAL:
 
 ```typescript
 (@case
@@ -236,13 +260,13 @@ err
 
 ### Comments
 
-In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol \` and ends with another backtick symbol \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
+In SEAL, comments are used to document the code and improve its readability. A comment in SEAL starts with a backtick symbol \` and ends with another backtick symbol \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
 
 ```typescript
 `This is a single-line comment`;
 ```
 
-You can also write multi-line comments in Seal by using the backtick symbol multiple times. Here's an example:
+You can also write multi-line comments in SEAL by using the backtick symbol multiple times. Here's an example:
 
 ```typescript
 `
@@ -256,7 +280,7 @@ It's important to note that comments should be used sparingly and only when nece
 
 ### Literals
 
-Literals in "seal" are used to represent values of integers and bytes. Integers are compiled to TEAL's `int` opcode, which pushes a 64-bit unsigned integer value onto the TEAL stack, while bytes are compiled to TEAL's `byte` opcode, which pushes a byte string value onto the TEAL stack.
+Literals in SEAL are used to represent values of integers and bytes. Integers are compiled to TEAL's `int` opcode, which pushes a 64-bit unsigned integer value onto the TEAL stack, while bytes are compiled to TEAL's `byte` opcode, which pushes a byte string value onto the TEAL stack.
 
 Literals can be used in expressions, assigned to variables, and passed as function arguments. For example:
 
@@ -274,7 +298,7 @@ byte "Hello World"
 
 ### Constants
 
-Constants in "seal" are defined using all capitalized names starting with a `$` sign, like `$MAX_SIZE`. Constant definitions do not emit any code by themselves. Instead, when a constant is referred to using `$CONSTANT_NAME`, the value of the constant is substituted into the literal expression they hold.
+Constants in SEAL are defined using all capitalized names starting with a `$` sign, like `$MAX_SIZE`. Constant definitions do not emit any code by themselves. Instead, when a constant is referred to using `$CONSTANT_NAME`, the value of the constant is substituted into the literal expression they hold.
 
 For example:
 
@@ -298,7 +322,7 @@ int 1 // $TRUE
 
 ### Variables
 
-Variables in "seal" are defined using names starting with a lower case letter and a `$` sign, like `$my_var`. When a variable is defined, the value of the assigned expression is stored in the scratch space, using an auto-incremented index to denote where it's saved. Variables can be used in expressions, assigned new values, and passed as function arguments.
+Variables in SEAL are defined using names starting with a lower case letter and a `$` sign, like `$my_var`. When a variable is defined, the value of the assigned expression is stored in the scratch space, using an auto-incremented index to denote where it's saved. Variables can be used in expressions, assigned new values, and passed as function arguments.
 
 To refer to a variable, use its name starting with a `$` sign. The compiled code will then load the value from scratch space by using the indexed value.
 
@@ -325,11 +349,11 @@ load 0 // $my_var
 load 1 // $another_var
 ```
 
-Please note that the use of variables in "seal" is limited by the scratch space available in Algorand's TEAL language. TEAL has a maximum scratch space size of 256 bytes, which limits the number of variables that can be used in a smart contract. It is important to carefully manage the use of variables and their associated memory usage to ensure that your smart contract stays within the limits of the TEAL language.
+Please note that the use of variables in SEAL is limited by the scratch space available in Algorand's TEAL language. TEAL has a maximum scratch space size of 256 slots, which limits the number of variables that can be used in a smart contract. It is important to carefully manage the use of variables and their associated memory usage to ensure that your smart contract stays within the limits of the TEAL language.
 
 ### Conditions
 
-Conditions in "seal" are used for making decisions based on certain conditions. There are two types of conditions: single conditions and compound conditions.
+Conditions in SEAL are used for making decisions based on certain conditions. There are two types of conditions: single conditions and compound conditions.
 
 #### Single Conditions
 
@@ -362,7 +386,7 @@ This condition will check the value of the variable `$my_var` against the first 
 
 #### While loops
 
-In Seal, a while loop is used to repeatedly execute a block of code while a certain condition is true. The syntax for a while loop in Seal is as follows:
+In SEAL, a while loop is used to repeatedly execute a block of code while a certain condition is true. The syntax for a while loop in SEAL is as follows:
 
 ```
 (@while (condition)
@@ -372,7 +396,7 @@ In Seal, a while loop is used to repeatedly execute a block of code while a cert
 
 The condition is an expression that evaluates to a boolean value (true or false). If the condition is true, the block of code will execute. If the condition is false, the block of code will not execute.
 
-Here's an example of a while loop in Seal that uses a counter to iterate through a loop:
+Here's an example of a while loop in SEAL that uses a counter to iterate through a loop:
 
 ```typescript
 ($MAX_SIZE 10)
@@ -406,7 +430,7 @@ It's important to ensure that the condition in a while loop will eventually eval
 
 #### Inner Transactions
 
-"Seal" introduces the `#itxn` command as a shorthand for inner transactions in Algorand TEAL. The `#itxn` command encapsulates the functionality of `itxn_begin` and `itxn_submit` statements, making it easier for developers to express inner transactions in their smart contracts. With `#itxn`, developers can use `itxn_field` to set any attribute of the inner transaction and commit it eventually.
+SEAL introduces the `#itxn` command as a shorthand for inner transactions in Algorand TEAL. The `#itxn` command encapsulates the functionality of `itxn_begin` and `itxn_submit` statements, making it easier for developers to express inner transactions in their smart contracts. With `#itxn`, developers can use `itxn_field` to set any attribute of the inner transaction and commit it eventually.
 
 ```typescript
 (@itxn
@@ -430,6 +454,10 @@ itxn_field TypeEnum
 itxn_submit
 ```
 
+#### Functions / Sub routines
+
+Please advise your idea!
+
 ## Disclaimer
 
 Please note that SEAL is currently in the early stages of development and while not tested it thoroughly, it may still contain bugs or errors. As such, use SEAL with caution, and always test your programs thoroughly before deploying them to the Algorand blockchain.
@@ -438,6 +466,12 @@ This software cannot be held responsible for any errors or issues that may arise
 
 If you encounter any problems or have any questions about SEAL, please don't hesitate to reach out or raise an issue.
 Your support and feedback is very much appreciated.
+
+## TODO
+
+- Indexed field access option for numeric fields where dot notation used
+- Comprehensive unit tests
+- Function call syntax and find a way to employ sub routines
 
 ## Licence
 
