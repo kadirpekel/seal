@@ -359,6 +359,52 @@ Compound conditions are constructed using the `@in` operator. The `@in` operator
 
 This condition will check the value of the variable `$my_var` against the first `@case` statement, and if it's true, it will return `1`. If it's not true, it will check the second `@case` statement, and so on. If none of the `@case` statements are true, it will return `3`.
 
+### Loops
+
+#### While loops
+
+In Seal, a while loop is used to repeatedly execute a block of code while a certain condition is true. The syntax for a while loop in Seal is as follows:
+
+```
+(@while (condition)
+    (block of code)
+)
+```
+
+The condition is an expression that evaluates to a boolean value (true or false). If the condition is true, the block of code will execute. If the condition is false, the block of code will not execute.
+
+Here's an example of a while loop in Seal that uses a counter to iterate through a loop:
+
+```typescript
+($MAX_SIZE 10)
+($i 0)
+(@while (< $i $MAX_SIZE)
+    ($i (+ $i 1))
+)
+```
+
+Compiles to:
+
+```teal
+int 0
+store 0 // $i
+while_0:
+load 0 // $i
+int 10 // $MAX_SIZE
+<
+bz while_0_end
+load 0 // $i
+int 1
++
+store 0 // $i
+b while_0
+while_0_end:
+```
+
+In this example, the `($MAX_SIZE 10)` expression sets a constant MAX_SIZE to 10 where `($i 0)` expression sets a variable `i` to 0. The `(@while (< $i $MAX_SIZE)` expression sets up the while loop and specifies that the loop should continue while `i` is less than `MAX_SIZE`. The `($i (+ $i 1))` expression increments the value of `i` by 1 with each iteration of the loop.
+
+It's important to ensure that the condition in a while loop will eventually evaluate to false, otherwise the loop will run indefinitely, which can cause the program to crash.
+
 #### Inner Transactions
 
 "Seal" introduces the `#itxn` command as a shorthand for inner transactions in Algorand TEAL. The `#itxn` command encapsulates the functionality of `itxn_begin` and `itxn_submit` statements, making it easier for developers to express inner transactions in their smart contracts. With `#itxn`, developers can use `itxn_field` to set any attribute of the inner transaction and commit it eventually.
