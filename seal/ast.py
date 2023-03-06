@@ -182,7 +182,7 @@ class Node(Generic[T]):
 @dataclass
 class Opcode(Node):
 
-    NONSTRICT_FLAG = '`'
+    NONSTRICT_FLAG = '\''
 
     spec: Optional[langspec.Opcode] = None
     immediate_args_override: Optional[List[str]] = None

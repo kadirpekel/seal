@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 STRING_DELIMETER = '"'
-COMMENT_DELIMETER = '\''
+COMMENT_DELIMETER = '`'
 LABEL_SUFFIX = ':'
 LEFT_PAREN = '('
 RIGHT_PAREN = ')'

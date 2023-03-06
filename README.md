@@ -19,29 +19,14 @@ SEAL does not add any additional layers of abstraction to the TEAL language. By 
 See a minimal example below to experience how SEAL enhances the readability and ease-of-use of TEAL:
 
 ```typescript
-(@in
-  (@case (== txn.ApplicationID 0)
-    (return 1)
-  )
-  (@case (== txn.OnCompletion int.OptIn)
-    (return 1)
-  )
-  (@case (== txn.OnCompletion int.NoOp)
-    (@case (== txna.ApplicationArgs.0 "visit")
-        b.visit
-    )
-  )
+($$MAX_SIZE 0) `This is a constant`
+
+($i 0) `Variable assignment`
+
+`While loop using reading and incrementing $i`
+(@while (< $i 10)
+    ($i (+ $i 1))
 )
-
-err
-
-(visit:
-  ($visits (+ (app_local_get 0 "visits") 1))
-  (app_local_put 0 "visits" $visits)
-  (return 1)
-)
-
-err
 ```
 
 Simply compile your seal code to convert it to a valid TEAL language.
@@ -54,50 +39,19 @@ Our `seal` code will be compiled into a perfectly valid, well organized `teal` f
 
 ```teal
 #pragma version 8
-txn ApplicationID
 int 0
-==
-bz case_0
-int 1
-return
-case_0:
-b in_0
-txn OnCompletion
-int OptIn
-==
-bz case_1
-int 1
-return
-case_1:
-b in_0
-txn OnCompletion
-int NoOp
-==
-bz case_2
-txna ApplicationArgs 0
-byte "visit"
-==
-bz case_3
-b visit
-case_3:
-case_2:
-b in_0
-in_0:
-err
-visit:
-int 0
-byte "visits"
-app_local_get
+store 0 // $i
+while_0:
+load 0 // $i
+int 10
+<
+bz while_0_end
+load 0 // $i
 int 1
 +
-store 0 // $visits
-int 0
-byte "visits"
-load 0 // $visits
-app_local_put
-int 1
-return
-err
+store 0 // $i
+b while_0
+while_0_end:
 ```
 
 You're now perfectly ready to deploy and test out your newly created smart contract.

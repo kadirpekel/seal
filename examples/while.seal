@@ -1,6 +1,8 @@
-($$MAX_SIZE 0)
+($$MAX_SIZE 0) `This is a constant`
 
-($i 0)
+($i 0) `Variable assignment`
+
+`While loop using reading and incrementing $i`
 (@while (< $i 10)
     ($i (+ $i 1))
 )
