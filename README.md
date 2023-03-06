@@ -178,6 +178,22 @@ You can chain and nest several opcodes using the lisp-style syntax to create mor
 
 ### Fields
 
+In Algorand, some opcodes like `global`, `txn`, `txna`, `gtxn`, `itxn_field` and several others behave like namespaces for accessing various transactional and global data in a smart contract. Seal provides a specific syntax known as dot notation allowing developers to access fields within these namespaces using the format `namespace.field1.field2`. For example, `txn.ApplicationID` accesses the `ApplicationID` field within the `txn` namespace.
+
+Please find below to find out how dot notation is used to achieve desired functionallity:
+
+```typescript
+(== txna.ApplicationArgs.0 "Hello World")
+```
+
+Compiles into:
+
+```teal
+txna ApplicationArgs 0
+"Hello World"
+==
+```
+
 ### Comments
 
 In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol \` and ends with another backtick symbol \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
