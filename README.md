@@ -144,7 +144,7 @@ This code uses the + operator to add the values 1, 2, and 3 together, which are 
 In SEAL, comments are used to document the code and improve its readability. A comment in SEAL starts with a backtick symbol \` and ends with another backtick symbol \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
 
 ```typescript
-`This is a single-line comment`;
+`This is a single-line comment`
 ```
 
 You can also write multi-line comments in SEAL by using the backtick symbol multiple times. Here's an example:
@@ -154,7 +154,7 @@ You can also write multi-line comments in SEAL by using the backtick symbol mult
 This is a
 multi-line
 comment
-`;
+`
 ```
 
 It's important to note that comments should be used sparingly and only when necessary to explain the code's purpose or implementation. Overuse of comments can make the code harder to read and maintain.
@@ -166,8 +166,8 @@ Literals in SEAL are used to represent values of integers and bytes. Integers ar
 Literals can be used in expressions, assigned to variables, and passed as function arguments. For example:
 
 ```typescript
-42;
-("Hello World");
+42
+("Hello World")
 ```
 
 Compiles into:
@@ -239,7 +239,7 @@ In SEAL, any sequence of characters that is not a special syntax element (such a
 Here's a simple demonstration of how opcodes are called in SEAL:
 
 ```typescript
-err;
+err
 ```
 
 Compiles into:
