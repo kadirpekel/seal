@@ -122,10 +122,14 @@ enable strict compiler checks. More information will be available soon.
 
 ### Comments
 
+<<<<<<< Updated upstream
 In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol \` and ends with another backtick symbol  \`. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
+=======
+In Seal, comments are used to document the code and improve its readability. A comment in Seal starts with a backtick symbol `and ends with another backtick symbol `. Everything between these two symbols is ignored by the compiler and does not emit any Teal code. Here's an example:
+>>>>>>> Stashed changes
 
 ```typescript
-`This is a single-line comment`
+`This is a single-line comment`;
 ```
 
 You can also write multi-line comments in Seal by using the backtick symbol multiple times. Here's an example:
@@ -135,8 +139,7 @@ You can also write multi-line comments in Seal by using the backtick symbol mult
 This is a
 multi-line
 comment
-`
-
+`;
 ```
 
 It's important to note that comments should be used sparingly and only when necessary to explain the code's purpose or implementation. Overuse of comments can make the code harder to read and maintain.
@@ -233,7 +236,7 @@ This condition will return 1 if the value of the variable `$my_var` is equal to 
 
 #### Compound Conditions
 
-Compound conditions are constructed using the `@in` operator. The `@in` operator expects all of its children to be `@case` statements and works exactly like "if .. else if .. else if" conditions. For example:
+Compound conditions are constructed using the `@in` operator. The `@in` operator expects all of its children to be `@case` statements and works exactly like "if .. else if .. else" conditions. For example:
 
 ```typescript
 (@in
@@ -244,8 +247,6 @@ Compound conditions are constructed using the `@in` operator. The `@in` operator
 ```
 
 This condition will check the value of the variable `$my_var` against the first `@case` statement, and if it's true, it will return `1`. If it's not true, it will check the second `@case` statement, and so on. If none of the `@case` statements are true, it will return `3`.
-
-Note that the `@in` operator is similar to a switch statement in conventional programming, but with slightly different syntax.
 
 ## Disclaimer
 
