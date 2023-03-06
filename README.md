@@ -19,12 +19,12 @@ SEAL does not add any additional layers of abstraction to the TEAL language. By 
 See a minimal example below to experience how SEAL enhances the readability and ease-of-use of TEAL:
 
 ```typescript
-($$MAX_SIZE 10) `This is a constant`
+($MAX_SIZE 10) `This is a constant, name all capitalized`
 
 ($i 0) `Variable assignment`
 
 `While loop using reading and incrementing $i`
-(@while (< $i $$MAX_SIZE)
+(@while (< $i $MAX_SIZE)
     ($i (+ $i 1))
 )
 ```
@@ -43,7 +43,7 @@ int 0
 store 0 // $i
 while_0:
 load 0 // $i
-int 10 // $$MAX_SIZE
+int 10 // $MAX_SIZE
 <
 bz while_0_end
 load 0 // $i
@@ -120,7 +120,107 @@ enable strict compiler checks. More information will be available soon.
 
 ## Documenation
 
-No dedicated detailed documentation available yet, coming soon...
+### Literals
+
+Literals in "seal" are used to represent values of integers and bytes. Integers are compiled to TEAL's `int` opcode, which pushes a 64-bit unsigned integer value onto the TEAL stack, while bytes are compiled to TEAL's `byte` opcode, which pushes a byte string value onto the TEAL stack.
+
+Literals can be used in expressions, assigned to variables, and passed as function arguments. For example:
+
+```typescript
+42;
+("Hello World");
+```
+
+Compiles to:
+
+```teal
+int 42
+byte "Hello World"
+```
+
+### Constants
+
+Constants in "seal" are defined using all capitalized names starting with a `$` sign, like `$MAX_SIZE`. Constant definitions do not emit any code by themselves. Instead, when a constant is referred to using `$CONSTANT_NAME`, the value of the constant is substituted into the literal expression they hold.
+
+For example:
+
+```typescript
+($MAX_SIZE 42)
+($MESSAGE "Hello, World!")
+($TRUE 1)
+```
+
+Compiles into:
+
+```teal
+int 42
+byte "Hello, World!"
+int 1
+```
+
+### Variables
+
+Variables in "seal" are defined using names starting with a lower case letter and a `$` sign, like `$my_var`. When a variable is defined, the value of the assigned expression is stored in the scratch space, using an auto-incremented index to denote where it's saved. Variables can be used in expressions, assigned new values, and passed as function arguments.
+
+To refer to a variable, use its name starting with a `$` sign. The compiled code will then load the value from scratch space by using the indexed value.
+
+For example:
+
+```typescript
+($my_var 42)
+($another_var "Hello, World!")
+
+$my_var
+$another_var
+```
+
+Compiles to:
+
+```teal
+int 42
+store 0 // $my_var
+
+byte "Hello, World!"
+store 1 // $another_var
+
+load 0 // $my_var
+load 1 // $another_var
+```
+
+Please note that the use of variables in "seal" is limited by the scratch space available in Algorand's TEAL language. TEAL has a maximum scratch space size of 256 bytes, which limits the number of variables that can be used in a smart contract. It is important to carefully manage the use of variables and their associated memory usage to ensure that your smart contract stays within the limits of the TEAL language.
+
+### Conditions
+
+Conditions in "seal" are used for making decisions based on certain conditions. There are two types of conditions: single conditions and compound conditions.
+
+#### Single Conditions
+
+Single conditions are constructed using the `@case` operator. The @case operator takes its first expression as the test value and the second expression as the action to take if the test is true. For example:
+
+```
+(@case
+    (== $my_var "Hello World")
+    (return 1)
+)
+```
+
+This condition will return 1 if the value of the variable `$my_var` is equal to "Hello World".
+
+#### Compound Conditions
+
+Compound conditions are constructed using the `@in` operator. The `@in` operator expects all of its children to be `@case` statements and works exactly like "if .. else if .. else if" conditions. For example:
+
+```
+(@in
+    (@case (== $my_var "Hello World") (return 1))
+    (@case (== $my_var "Goodbye World") (return 2))
+    (return 3)
+)
+```
+
+This condition will check the value of the variable `$my_var` against the first `@case` statement, and if it's true, it will return `1`. If it's not true, it will check the second `@case` statement, and so on. If none of the `@case` statements are true, it will return `3`.
+
+Note that the `@in` operator is similar to a switch statement in conventional programming, but with slightly different syntax.
 
 ## Disclaimer
 

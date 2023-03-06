@@ -1,8 +1,8 @@
-($$MAX_SIZE 10) `This is a constant`
+($MAX_SIZE 10) `This is a constant, name all capitalized`
 
 ($i 0) `Variable assignment`
 
 `While loop using reading and incrementing $i`
-(@while (< $i $$MAX_SIZE)
+(@while (< $i $MAX_SIZE)
     ($i (+ $i 1))
 )
