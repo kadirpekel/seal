@@ -127,15 +127,15 @@ For example, consider the following code in original teal:
 ```teal
 int 1
 int 2
-+
 int 3
++
 +
 ```
 
 This code pushes the values 1 and 2 onto the stack, adds them together, pushes the value 3 onto the stack, and adds it to the previous result. Using seal, you could write the same code more concisely like this:
 
 ```typescript
-(+ 1 2 3)
+(+ 1 (+ 2 3))
 ```
 
 This code uses the + operator to add the values 1, 2, and 3 together, which are all pushed onto the stack automatically. As you can see, seal greatly simplifies the process of writing Algorand smart contracts by providing a more intuitive syntax for stack management.
