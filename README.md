@@ -107,7 +107,7 @@ enable strict compiler checks. More information will be available soon.
 
 ```
 % seal compile --help
->>> usage: seal compile [-h] [-p PRAGMA_VERSION] [-s] path
+>>> usage: seal compile [-h] [-p PRAGMA_VERSION] path
 >>>
 >>> positional arguments:
 >>>   path
@@ -115,7 +115,6 @@ enable strict compiler checks. More information will be available soon.
 >>> optional arguments:
 >>>   -h, --help         show this help message and exit
 >>>   -p PRAGMA_VERSION  pragma version
->>>   -s                 strict mode
 ```
 
 ## Documenation
