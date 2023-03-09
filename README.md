@@ -167,7 +167,7 @@ Literals can be used in expressions, assigned to variables, and passed as functi
 
 ```typescript
 42
-("Hello World")
+"Hello World"
 ```
 
 Compiles into:
